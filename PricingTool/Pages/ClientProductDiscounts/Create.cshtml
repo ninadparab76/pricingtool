@@ -1,0 +1,155 @@
+@page
+@model PricingTool.Pages.ClientProductDiscounts.CreateModel
+
+@{
+    ViewData["Title"] = "Create Client Product Discount";
+}
+
+<h1>Create Client Product Discount</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Discount Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="ClientProductDiscount.ClientId" class="control-label">Client</label>
+                                <select asp-for="ClientProductDiscount.ClientId" class="form-select select2" asp-items="Model.ClientSelectList" required>
+                                    <option value="">-- Select Client --</option>
+                                </select>
+                                <span asp-validation-for="ClientProductDiscount.ClientId" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="ClientProductDiscount.ProductId" class="control-label">Product</label>
+                                <select asp-for="ClientProductDiscount.ProductId" class="form-select select2" asp-items="Model.ProductSelectList" required>
+                                    <option value="">-- Select Product --</option>
+                                </select>
+                                <span asp-validation-for="ClientProductDiscount.ProductId" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="ClientProductDiscount.FixedPrice" class="control-label">Fixed Price</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="ClientProductDiscount.FixedPrice" class="form-control" placeholder="Leave empty to use discount percentage" />
+                                </div>
+                                <span asp-validation-for="ClientProductDiscount.FixedPrice" class="text-danger"></span>
+                                <small class="form-text text-muted">Set a fixed price or leave empty to use discount percentage.</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="ClientProductDiscount.Discount" class="control-label">Discount Percentage</label>
+                                <div class="input-group">
+                                    <input asp-for="ClientProductDiscount.Discount" class="form-control" placeholder="Leave empty to use fixed price" />
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <span asp-validation-for="ClientProductDiscount.Discount" class="text-danger"></span>
+                                <small class="form-text text-muted">Set a discount percentage or leave empty to use fixed price.</small>
+                            </div>
+                        </div>
+                    </div>
+                      <div class="form-group">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> You must provide either a Fixed Price or a Discount percentage.
+                        </div>
+                    </div>
+                    
+                    <div id="priceInfo">
+                        <!-- Price information will be displayed here via JavaScript -->
+                    </div>
+                    
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Create
+                        </button>
+                        <a asp-page="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to List
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Help Information</h5>
+            </div>
+            <div class="card-body">
+                <p>Create a special pricing for a specific client and product:</p>
+                <ul>
+                    <li><strong>Fixed Price</strong>: Set an exact price for this client regardless of the product's base price.</li>
+                    <li><strong>Discount Percentage</strong>: Apply a percentage discount to the product's base price.</li>
+                </ul>
+                <p class="mb-0">If both values are provided, the Fixed Price will take precedence.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize select2 for better dropdown performance
+            $('.select2').select2({
+                theme: 'bootstrap-5'
+            });
+            
+            // Add event listeners for client and product dropdowns
+            $('#ClientProductDiscount_ClientId, #ClientProductDiscount_ProductId').on('change', function() {
+                const clientId = $('#ClientProductDiscount_ClientId').val();
+                const productId = $('#ClientProductDiscount_ProductId').val();
+                
+                if (clientId && productId) {
+                    // Fetch price list price for this client and product
+                    $.ajax({
+                        url: `/api/pricelists/price?clientId=${clientId}&productId=${productId}`,
+                        method: 'GET',
+                        success: function(data) {
+                            if (data && data.priceListPrice) {
+                                // Show price list price
+                                $('#priceInfo').html(`
+                                    <div class="alert alert-info">
+                                        <strong>Price List Price:</strong> $${data.priceListPrice.toFixed(2)}
+                                        <small class="d-block">This price will be used as the base price for calculating the discount.</small>
+                                    </div>
+                                `);
+                            } else if (data && data.productPrice) {
+                                // Show product price
+                                $('#priceInfo').html(`
+                                    <div class="alert alert-secondary">
+                                        <strong>Product Base Price:</strong> $${data.productPrice.toFixed(2)}
+                                        <small class="d-block">No price list price found for this client and product. The product base price will be used.</small>
+                                    </div>
+                                `);
+                            } else {
+                                $('#priceInfo').empty();
+                            }
+                        },
+                        error: function() {
+                            $('#priceInfo').empty();
+                        }
+                    });
+                } else {
+                    $('#priceInfo').empty();
+                }
+            });
+        });
+    </script>
+}

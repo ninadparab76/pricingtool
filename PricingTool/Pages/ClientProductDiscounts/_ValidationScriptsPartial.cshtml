@@ -1,0 +1,22 @@
+@{
+    // This is a partial view for validation scripts specific to the ClientProductDiscounts pages
+}
+
+<script>
+    $(document).ready(function () {
+        // Custom validation for ClientProductDiscount form
+        // Ensure either FixedPrice or Discount is provided
+        $('form').submit(function (event) {
+            const fixedPrice = $('#ClientProductDiscount_FixedPrice').val();
+            const discount = $('#ClientProductDiscount_Discount').val();
+            
+            if (!fixedPrice && !discount) {
+                alert('You must provide either a Fixed Price or a Discount percentage.');
+                event.preventDefault();
+                return false;
+            }
+            
+            return true;
+        });
+    });
+</script>

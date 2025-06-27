@@ -1,0 +1,77 @@
+@page
+@model PricingTool.Pages.ClientProductDiscounts.DeleteModel
+
+@{
+    ViewData["Title"] = "Delete Discount";
+}
+
+<h1>Delete Client Product Discount</h1>
+
+<div class="alert alert-danger">
+    <h4><i class="bi bi-exclamation-triangle-fill"></i> Are you sure you want to delete this discount?</h4>
+    <p>This action cannot be undone. The client will revert to standard pricing for this product.</p>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Discount Details</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Client</dt>
+                    <dd class="col-sm-8">
+                        @Html.DisplayFor(model => model.ClientProductDiscount.Client.Title)
+                        @if (!string.IsNullOrEmpty(Model.ClientProductDiscount.Client.ReferenceNumber))
+                        {
+                            <small class="d-block text-muted">@Model.ClientProductDiscount.Client.ReferenceNumber</small>
+                        }
+                    </dd>
+                    
+                    <dt class="col-sm-4">Product</dt>
+                    <dd class="col-sm-8">
+                        @Html.DisplayFor(model => model.ClientProductDiscount.Product.ProductName)
+                        <small class="d-block text-muted">@Model.ClientProductDiscount.Product.Category</small>
+                    </dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <dl class="row mb-0">
+                    @if (Model.ClientProductDiscount.FixedPrice.HasValue)
+                    {
+                        <dt class="col-sm-4">Fixed Price</dt>
+                        <dd class="col-sm-8">@Html.DisplayFor(model => model.ClientProductDiscount.FixedPrice)</dd>
+                    }
+                    
+                    @if (Model.ClientProductDiscount.Discount.HasValue)
+                    {
+                        <dt class="col-sm-4">Discount</dt>
+                        <dd class="col-sm-8">@Html.DisplayFor(model => model.ClientProductDiscount.Discount)%</dd>
+                    }
+                      <dt class="col-sm-4">Base Price</dt>
+                    <dd class="col-sm-8">
+                        @Html.DisplayFor(model => model.ClientProductDiscount.Product.BasePrice)
+                        @if (Model.PriceListPrice.HasValue)
+                        {
+                            <span class="badge bg-info ms-2">Price List: @Model.PriceListPrice.Value.ToString("C2")</span>
+                        }
+                    </dd>
+                    
+                    <dt class="col-sm-4">Final Price</dt>
+                    <dd class="col-sm-8">@Model.FinalPrice.ToString("C2")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="post">
+    <input type="hidden" asp-for="ClientProductDiscount.Id" />
+    <button type="submit" class="btn btn-danger">
+        <i class="bi bi-trash"></i> Delete
+    </button>
+    <a asp-page="./Index" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to List
+    </a>
+</form>

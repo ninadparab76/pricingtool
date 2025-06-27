@@ -1,0 +1,543 @@
+@page
+@model PricingTool.Pages.ClientProductDiscounts.IndexModel
+
+@{
+    ViewData["Title"] = "Client Product Discounts";
+}
+
+<h1>Client Product Discounts</h1>
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <a asp-page="Create" class="btn btn-primary">Create New</a>
+    </div>
+    <div class="btn-group" role="group" aria-label="View options">
+        <a asp-page="./Index" 
+           asp-route-groupByClient="false"
+           asp-route-searchString="@Model.SearchString"
+           asp-route-clientFilter="@Model.ClientFilter"
+           asp-route-productFilter="@Model.ProductFilter"
+           class="btn @(!Model.GroupByClient ? "btn-primary" : "btn-outline-primary")"
+           data-bs-toggle="tooltip" title="View all discounts in a table with pagination">
+            <i class="bi bi-list"></i> Regular View
+        </a>
+        <a asp-page="./Index" 
+           asp-route-groupByClient="true"
+           asp-route-searchString="@Model.SearchString"
+           asp-route-clientFilter="@Model.ClientFilter"
+           asp-route-productFilter="@Model.ProductFilter"
+           class="btn @(Model.GroupByClient ? "btn-primary" : "btn-outline-primary")"
+           data-bs-toggle="tooltip" title="Group discounts by client in collapsible sections">
+            <i class="bi bi-collection"></i> Group by Client
+        </a>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-12">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Search..." name="searchString"
+                        value="@Model.SearchString">
+                    <button type="submit" class="btn btn-outline-secondary">Search</button>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="clientFilter" class="form-select" asp-items="Model.ClientSelectList">
+                    <option value="">-- All Clients --</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="productFilter" class="form-select" asp-items="Model.ProductSelectList">
+                    <option value="">-- All Products --</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-outline-primary">Apply Filters</button>
+                    <a asp-page="./Index" class="btn btn-outline-secondary">Clear</a>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse"
+                        data-bs-target="#advancedFilters">
+                        More
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-12 mt-2 collapse" id="advancedFilters">
+                <div class="card card-body">                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Fixed Price Range</label>
+                            <div class="input-group">
+                                <span class="input-group-text">From</span>
+                                <input type="number" step="0.01" class="form-control" name="minFixedPrice"
+                                    placeholder="Min Price">
+                                <span class="input-group-text">To</span>
+                                <input type="number" step="0.01" class="form-control" name="maxFixedPrice"
+                                    placeholder="Max Price">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Discount Range (%)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">From</span>
+                                <input type="number" step="0.01" class="form-control" name="minDiscount"
+                                    placeholder="Min Discount">
+                                <span class="input-group-text">To</span>
+                                <input type="number" step="0.01" class="form-control" name="maxDiscount"
+                                    placeholder="Max Discount">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.GroupByClient)
+{
+    <!-- Grouped by Client View -->
+    <div class="alert alert-info mb-3">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <div>
+                <strong>Grouped View:</strong> Discounts are organized by client. Click on a client to expand or collapse its discounts.
+            </div>
+        </div>
+    </div>
+    
+    @if (!Model.ClientsWithDiscounts.Any())
+    {
+        <div class="alert alert-info">
+            No discounts found matching the current filters.
+        </div>
+    }
+    else
+    {
+        <div class="accordion" id="discountsAccordion">
+            @foreach (var clientGroup in Model.ClientsWithDiscounts)
+            {
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading@(clientGroup.Client.Id)">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapse@(clientGroup.Client.Id)" aria-expanded="true"
+                            aria-controls="collapse@(clientGroup.Client.Id)">
+                            <strong>@clientGroup.Client.Title</strong>
+                            @if (!string.IsNullOrEmpty(clientGroup.Client.ReferenceNumber))
+                            {
+                                <span class="ms-2 text-muted">(@clientGroup.Client.ReferenceNumber)</span>
+                            }
+                            <span class="badge bg-primary rounded-pill ms-2">@clientGroup.Discounts.Count discounts</span>
+                        </button>
+                    </h2>
+                    <div id="collapse@(clientGroup.Client.Id)" class="accordion-collapse collapse show"
+                        aria-labelledby="heading@(clientGroup.Client.Id)" data-bs-parent="#discountsAccordion">
+                        <div class="accordion-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                <a asp-page="./Index" asp-route-sortOrder="@Model.ProductSort"
+                                                    asp-route-searchString="@Model.SearchString"
+                                                    asp-route-clientFilter="@Model.ClientFilter"
+                                                    asp-route-productFilter="@Model.ProductFilter" asp-route-groupByClient="true">
+                                                    Product
+                                                    @if (Model.CurrentSort == "product_asc")
+                                                    {
+                                                        <i class="bi bi-arrow-up"></i>
+                                                    }
+                                                    else if (Model.CurrentSort == "product_desc")
+                                                    {
+                                                        <i class="bi bi-arrow-down"></i>
+                                                    }
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a asp-page="./Index" asp-route-sortOrder="@Model.FixedPriceSort"
+                                                    asp-route-searchString="@Model.SearchString"
+                                                    asp-route-clientFilter="@Model.ClientFilter"
+                                                    asp-route-productFilter="@Model.ProductFilter" asp-route-groupByClient="true">
+                                                    Fixed Price
+                                                    @if (Model.CurrentSort == "fixedprice_asc")
+                                                    {
+                                                        <i class="bi bi-arrow-up"></i>
+                                                    }
+                                                    else if (Model.CurrentSort == "fixedprice_desc")
+                                                    {
+                                                        <i class="bi bi-arrow-down"></i>
+                                                    }
+                                                </a>
+                                            </th>
+                                            <th>
+                                                <a asp-page="./Index" asp-route-sortOrder="@Model.DiscountSort"
+                                                    asp-route-searchString="@Model.SearchString"
+                                                    asp-route-clientFilter="@Model.ClientFilter"
+                                                    asp-route-productFilter="@Model.ProductFilter" asp-route-groupByClient="true">
+                                                    Discount (%)
+                                                    @if (Model.CurrentSort == "discount_asc")
+                                                    {
+                                                        <i class="bi bi-arrow-up"></i>
+                                                    }
+                                                    else if (Model.CurrentSort == "discount_desc")
+                                                    {
+                                                        <i class="bi bi-arrow-down"></i>
+                                                    }
+                                                </a>
+                                            </th>
+                                            <th>Base Price</th>
+                                            <th>Final Price</th>
+                                            <th>
+                                                <a asp-page="./Index" asp-route-sortOrder="@Model.DateModifiedSort"
+                                                    asp-route-searchString="@Model.SearchString"
+                                                    asp-route-clientFilter="@Model.ClientFilter"
+                                                    asp-route-productFilter="@Model.ProductFilter" asp-route-groupByClient="true">
+                                                    Modified
+                                                    @if (Model.CurrentSort == "modified_asc")
+                                                    {
+                                                        <i class="bi bi-arrow-up"></i>
+                                                    }
+                                                    else if (Model.CurrentSort == "modified_desc")
+                                                    {
+                                                        <i class="bi bi-arrow-down"></i>
+                                                    }
+                                                </a>
+                                            </th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var discount in clientGroup.Discounts)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    @Html.DisplayFor(modelItem => discount.Product.ProductName)
+                                                    <small class="d-block text-muted">@discount.Product.Category</small>
+                                                </td>
+                                                <td>
+                                                    @if (discount.FixedPrice.HasValue)
+                                                    {
+                                                        @Html.DisplayFor(modelItem => discount.FixedPrice)
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">N/A</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (discount.Discount.HasValue)
+                                                    {
+                                                        @Html.DisplayFor(modelItem => discount.Discount)
+
+                                                        <text>%</text>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">N/A</span>
+                                                    }
+                                                </td>                                                <td>
+                                                    @{
+                                                        var basePrice = Model.GetBasePrice(discount);
+                                                    }
+                                                    @basePrice.ToString("N2") €
+                                                </td><td>
+                                                    @{
+                                                        decimal finalPrice = Model.GetFinalPrice(discount);
+                                                    }
+                                                    @finalPrice.ToString("N2") €
+                                                </td>
+                                                <td>
+                                                    @Html.DisplayFor(modelItem => discount.DateModified)
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <a asp-page="./Edit" asp-route-id="@discount.Id"
+                                                            class="btn btn-sm btn-outline-primary">Edit</a>
+                                                        <a asp-page="./Details" asp-route-id="@discount.Id"
+                                                            class="btn btn-sm btn-outline-info">Details</a>
+                                                        <a asp-page="./Delete" asp-route-id="@discount.Id"
+                                                            class="btn btn-sm btn-outline-danger">Delete</a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}
+else
+{
+    <!-- Regular View with Pagination -->
+    <div class="alert alert-info mb-3">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <div>
+                <strong>Regular View:</strong> All discounts are displayed in a paginated table.
+            </div>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>
+                        <a asp-page="./Index" asp-route-sortOrder="@Model.ClientSort"
+                            asp-route-searchString="@Model.SearchString" asp-route-clientFilter="@Model.ClientFilter"
+                            asp-route-productFilter="@Model.ProductFilter" asp-route-groupByClient="false">
+                            Client
+                            @if (Model.CurrentSort == "client_asc")
+                            {
+                                <i class="bi bi-arrow-up"></i>
+                            }
+                            else if (Model.CurrentSort == "client_desc")
+                            {
+                                <i class="bi bi-arrow-down"></i>
+                            }
+                        </a>
+                    </th>
+                    <th>
+                        <a asp-page="./Index" asp-route-sortOrder="@Model.ProductSort"
+                            asp-route-searchString="@Model.SearchString" asp-route-clientFilter="@Model.ClientFilter"
+                            asp-route-productFilter="@Model.ProductFilter" asp-route-groupByClient="false">
+                            Product
+                            @if (Model.CurrentSort == "product_asc")
+                            {
+                                <i class="bi bi-arrow-up"></i>
+                            }
+                            else if (Model.CurrentSort == "product_desc")
+                            {
+                                <i class="bi bi-arrow-down"></i>
+                            }
+                        </a>
+                    </th>
+                    <th>
+                        <a asp-page="./Index" asp-route-sortOrder="@Model.FixedPriceSort"
+                            asp-route-searchString="@Model.SearchString" asp-route-clientFilter="@Model.ClientFilter"
+                            asp-route-productFilter="@Model.ProductFilter" asp-route-groupByClient="false">
+                            Fixed Price
+                            @if (Model.CurrentSort == "fixedprice_asc")
+                            {
+                                <i class="bi bi-arrow-up"></i>
+                            }
+                            else if (Model.CurrentSort == "fixedprice_desc")
+                            {
+                                <i class="bi bi-arrow-down"></i>
+                            }
+                        </a>
+                    </th>
+                    <th>
+                        <a asp-page="./Index" asp-route-sortOrder="@Model.DiscountSort"
+                            asp-route-searchString="@Model.SearchString" asp-route-clientFilter="@Model.ClientFilter"
+                            asp-route-productFilter="@Model.ProductFilter" asp-route-groupByClient="false">
+                            Discount (%)
+                            @if (Model.CurrentSort == "discount_asc")
+                            {
+                                <i class="bi bi-arrow-up"></i>
+                            }
+                            else if (Model.CurrentSort == "discount_desc")
+                            {
+                                <i class="bi bi-arrow-down"></i>
+                            }
+                        </a>
+                    </th>
+                    <th>Base Price</th>
+                    <th>Final Price</th>
+                    <th>
+                        <a asp-page="./Index" asp-route-sortOrder="@Model.DateModifiedSort"
+                            asp-route-searchString="@Model.SearchString" asp-route-clientFilter="@Model.ClientFilter"
+                            asp-route-productFilter="@Model.ProductFilter" asp-route-groupByClient="false">
+                            Modified
+                            @if (Model.CurrentSort == "modified_asc")
+                            {
+                                <i class="bi bi-arrow-up"></i>
+                            }
+                            else if (Model.CurrentSort == "modified_desc")
+                            {
+                                <i class="bi bi-arrow-down"></i>
+                            }
+                        </a>
+                    </th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.ClientProductDiscounts)
+                {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Client.Title)
+                            @if (!string.IsNullOrEmpty(item.Client.ReferenceNumber))
+                            {
+                                <small class="d-block text-muted">@item.Client.ReferenceNumber</small>
+                            }
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Product.ProductName)
+                            <small class="d-block text-muted">@item.Product.Category</small>
+                        </td>
+                        <td>
+                            @if (item.FixedPrice.HasValue)
+                            {
+                                @Html.DisplayFor(modelItem => item.FixedPrice)
+                            }
+                            else
+                            {
+                                <span class="text-muted">N/A</span>
+                            }
+                        </td>
+                        <td>
+                            @if (item.Discount.HasValue)
+                            {
+                                @Html.DisplayFor(modelItem => item.Discount)
+
+                                <text>%</text>
+                            }
+                            else
+                            {
+                                <span class="text-muted">N/A</span>
+                            }
+                        </td>                        <td>
+                            @(item.Product.BasePrice.ToString("N2")) €
+                            @{
+                                var basePrice = Model.GetBasePrice(item);
+                                if (basePrice != item.Product.BasePrice)
+                                {
+                                    <span class="badge bg-info ms-2">PL: @basePrice.ToString("N2") €</span>
+                                }
+                            }
+                        </td><td>
+                            @{
+                                decimal finalPrice = Model.GetFinalPrice(item);
+                            }
+                            @finalPrice.ToString("N2") €
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.DateModified)
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a asp-page="./Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                <a asp-page="./Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info">Details</a>
+                                <a asp-page="./Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.ClientProductDiscounts?.Count == 0)
+    {
+        <div class="alert alert-info mt-3">
+            No discounts found matching the current filters.
+        </div>
+    }
+
+    @if (Model.ClientProductDiscounts != null)
+    {
+        var prevDisabled = !Model.ClientProductDiscounts.HasPreviousPage ? "disabled" : "";
+        var nextDisabled = !Model.ClientProductDiscounts.HasNextPage ? "disabled" : "";
+
+        <nav aria-label="Page navigation" class="mt-3">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @prevDisabled">
+                    <a asp-page="./Index" asp-route-sortOrder="@Model.CurrentSort"
+                        asp-route-pageIndex="@(Model.ClientProductDiscounts.PageIndex - 1)"
+                        asp-route-searchString="@Model.SearchString" asp-route-clientFilter="@Model.ClientFilter"
+                        asp-route-productFilter="@Model.ProductFilter" asp-route-groupByClient="false" class="page-link">
+                        Previous
+                    </a>
+                </li>
+
+                @for (int i = 1; i <= Model.ClientProductDiscounts.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.ClientProductDiscounts.PageIndex ? "active" : "")">
+                        <a asp-page="./Index" asp-route-sortOrder="@Model.CurrentSort" asp-route-pageIndex="@i"
+                            asp-route-searchString="@Model.SearchString" asp-route-clientFilter="@Model.ClientFilter"
+                            asp-route-productFilter="@Model.ProductFilter" asp-route-groupByClient="false" class="page-link">
+                            @i
+                        </a>
+                    </li>
+                }
+
+                <li class="page-item @nextDisabled">
+                    <a asp-page="./Index" asp-route-sortOrder="@Model.CurrentSort"
+                        asp-route-pageIndex="@(Model.ClientProductDiscounts.PageIndex + 1)"
+                        asp-route-searchString="@Model.SearchString" asp-route-clientFilter="@Model.ClientFilter"
+                        asp-route-productFilter="@Model.ProductFilter" asp-route-groupByClient="false" class="page-link">
+                        Next
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Pre-select the filter dropdowns based on URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const clientFilter = urlParams.get('clientFilter');
+            const productFilter = urlParams.get('productFilter');
+            const groupByClient = urlParams.get('groupByClient');
+            const minFixedPrice = urlParams.get('minFixedPrice');
+            const maxFixedPrice = urlParams.get('maxFixedPrice');
+            const minDiscount = urlParams.get('minDiscount');
+            const maxDiscount = urlParams.get('maxDiscount');
+
+            if (clientFilter) {
+                $('select[name="clientFilter"]').val(clientFilter);
+            }            if (productFilter) {
+                $('select[name="productFilter"]').val(productFilter);
+            }
+
+            if (minFixedPrice) {
+                $('input[name="minFixedPrice"]').val(minFixedPrice);
+            }
+
+            if (maxFixedPrice) {
+                $('input[name="maxFixedPrice"]').val(maxFixedPrice);
+            }
+
+            if (minDiscount) {
+                $('input[name="minDiscount"]').val(minDiscount);
+            }
+
+            if (maxDiscount) {
+                $('input[name="maxDiscount"]').val(maxDiscount);
+            }
+
+            // Show advanced filters panel if any of the advanced filters are set
+            if (minFixedPrice || maxFixedPrice || minDiscount || maxDiscount) {
+                $('#advancedFilters').addClass('show');
+            }
+
+            // Initialize select2 for better dropdown performance
+            $('select[name="clientFilter"]').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Select a client',
+                allowClear: true
+            });
+
+            $('select[name="productFilter"]').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Select a product',
+                allowClear: true
+            });
+            
+            // Initialize tooltips for view mode buttons
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+    </script>
+}

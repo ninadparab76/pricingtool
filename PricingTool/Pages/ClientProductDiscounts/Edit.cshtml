@@ -1,0 +1,150 @@
+@page
+@model PricingTool.Pages.ClientProductDiscounts.EditModel
+
+@{
+    ViewData["Title"] = "Edit Client Product Discount";
+}
+
+<h1>Edit Client Product Discount</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Discount Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="ClientProductDiscount.Id" />
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="ClientProductDiscount.ClientId" class="control-label">Client</label>
+                                <select asp-for="ClientProductDiscount.ClientId" class="form-select select2" asp-items="Model.ClientSelectList" required>
+                                    <option value="">-- Select Client --</option>
+                                </select>
+                                <span asp-validation-for="ClientProductDiscount.ClientId" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="ClientProductDiscount.ProductId" class="control-label">Product</label>
+                                <select asp-for="ClientProductDiscount.ProductId" class="form-select select2" asp-items="Model.ProductSelectList" required>
+                                    <option value="">-- Select Product --</option>
+                                </select>
+                                <span asp-validation-for="ClientProductDiscount.ProductId" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="ClientProductDiscount.FixedPrice" class="control-label">Fixed Price</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="ClientProductDiscount.FixedPrice" class="form-control" placeholder="Leave empty to use discount percentage" />
+                                </div>
+                                <span asp-validation-for="ClientProductDiscount.FixedPrice" class="text-danger"></span>
+                                <small class="form-text text-muted">Set a fixed price or leave empty to use discount percentage.</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="ClientProductDiscount.Discount" class="control-label">Discount Percentage</label>
+                                <div class="input-group">
+                                    <input asp-for="ClientProductDiscount.Discount" class="form-control" placeholder="Leave empty to use fixed price" />
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <span asp-validation-for="ClientProductDiscount.Discount" class="text-danger"></span>
+                                <small class="form-text text-muted">Set a discount percentage or leave empty to use fixed price.</small>
+                            </div>
+                        </div>
+                    </div>
+                      <div class="form-group">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> You must provide either a Fixed Price or a Discount percentage.
+                        </div>
+                    </div>
+                    
+                    <div id="priceInfo">
+                        @if (Model.PriceListPrice.HasValue)
+                        {
+                            <div class="alert alert-info">
+                                <strong>Price List Price:</strong> @Model.PriceListPrice.Value.ToString("C2")
+                                <small class="d-block">This price will be used as the base price for calculating the discount.</small>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-secondary">
+                                <strong>Product Base Price:</strong> @Model.Product.BasePrice.ToString("C2")
+                                <small class="d-block">No price list price found for this client and product. The product base price will be used.</small>
+                            </div>
+                        }
+                    </div>
+                    
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Save
+                        </button>
+                        <a asp-page="./Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to List
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Current Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="mb-1">Client</h6>
+                    <p class="mb-0">@Model.Client.Title @(Model.Client.ReferenceNumber != null ? $"({Model.Client.ReferenceNumber})" : "")</p>
+                </div>
+                <div class="mb-3">
+                    <h6 class="mb-1">Product</h6>
+                    <p class="mb-0">@Model.Product.ProductName (@Model.Product.Category)</p>
+                </div>                <div class="mb-3">
+                    <h6 class="mb-1">Base Price</h6>
+                    @if (Model.PriceListPrice.HasValue)
+                    {
+                        <p class="mb-0">@Model.PriceListPrice.Value.ToString("C2") <span class="badge bg-info">From price list</span></p>
+                        <small class="text-muted">Product price: @Model.Product.BasePrice.ToString("C2")</small>
+                    }
+                    else
+                    {
+                        <p class="mb-0">@Model.Product.BasePrice.ToString("C2")</p>
+                    }
+                </div>
+                <div class="mb-3">
+                    <h6 class="mb-1">Final Price</h6>
+                    <p class="mb-0">@Model.FinalPrice.ToString("C2")</p>
+                </div>
+                <div class="mb-3">
+                    <h6 class="mb-1">Last Modified</h6>
+                    <p class="mb-0">@Model.ClientProductDiscount.DateModified.ToString("g")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize select2 for better dropdown performance
+            $('.select2').select2({
+                theme: 'bootstrap-5'
+            });
+        });
+    </script>
+}

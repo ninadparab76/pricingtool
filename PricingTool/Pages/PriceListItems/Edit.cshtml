@@ -1,0 +1,64 @@
+@page
+@model PricingTool.Pages_PriceListItems.EditModel
+
+@{
+    ViewData["Title"] = "Edit Price List Item";
+}
+
+<h1>Edit Price List Item</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="PriceListEntry.Id" />
+            <input type="hidden" asp-for="PriceListEntry.DateCreated" />
+            <input type="hidden" asp-for="PriceListEntry.DateModified" />
+            
+            <div class="form-group mb-3">
+                <label asp-for="PriceListEntry.PriceListId" class="control-label">Price List</label>
+                <select asp-for="PriceListEntry.PriceListId" class="form-control form-select" asp-items="ViewBag.PriceListId"></select>
+                <span asp-validation-for="PriceListEntry.PriceListId" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group mb-3">
+                <label asp-for="PriceListEntry.ProductId" class="control-label">Product</label>
+                <select asp-for="PriceListEntry.ProductId" class="form-control form-select" asp-items="ViewBag.ProductId"></select>
+                <div class="form-text text-muted">Showing first 100 products. Type to search.</div>
+                <span asp-validation-for="PriceListEntry.ProductId" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group mb-3">
+                <label asp-for="PriceListEntry.OutPrice" class="control-label">Price</label>
+                <input asp-for="PriceListEntry.OutPrice" class="form-control" />
+                <span asp-validation-for="PriceListEntry.OutPrice" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group mt-4">
+                <input type="submit" value="Save" class="btn btn-primary" />
+                <a asp-page="Index" class="btn btn-secondary">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        // Initialize select2 for better dropdown performance
+        $(document).ready(function() {
+            $('#PriceListEntry_ProductId').select2({
+                placeholder: 'Select a product',
+                allowClear: true,
+                width: '100%'
+            });
+            
+            $('#PriceListEntry_PriceListId').select2({
+                placeholder: 'Select a price list',
+                allowClear: true,
+                width: '100%'
+            });
+        });
+    </script>
+}
