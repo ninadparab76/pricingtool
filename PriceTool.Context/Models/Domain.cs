@@ -15,7 +15,7 @@ public class Domain : BaseEntity
 
     public string? Tld { get; set; }
 
-    public DateTime? ExpirationDate { get; internal set; }
+    public DateTime? ExpirationDate { get; set; }
 
     public string? Comment { get; internal set; }
 

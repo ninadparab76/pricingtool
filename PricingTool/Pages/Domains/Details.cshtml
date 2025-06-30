@@ -1,0 +1,281 @@
+@page
+@model PricingTool.Pages.Domains.DetailsModel
+
+@{
+    ViewData["Title"] = "Domain Details";
+}
+
+<h1>Domain Details</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">@Model.Domain.DomainName@Model.Domain.Tld</h5>
+                <div>
+                    <a asp-page="./Edit" asp-route-id="@Model.Domain.Id" class="btn btn-primary btn-sm">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    <a asp-page="./Index" class="btn btn-secondary btn-sm">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-5">Domain Name:</dt>
+                            <dd class="col-sm-7">@Model.Domain.DomainName</dd>
+                            
+                            <dt class="col-sm-5">TLD:</dt>
+                            <dd class="col-sm-7">@Model.Domain.Tld</dd>
+                            
+                            <dt class="col-sm-5">Client:</dt>
+                            <dd class="col-sm-7">
+                                @if (Model.Domain.Client != null)
+                                {
+                                    <a asp-page="/Clients/Details" asp-route-id="@Model.Domain.ClientId">
+                                        @Model.Domain.Client.Title
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span>N/A</span>
+                                }
+                            </dd>
+                            
+                            <dt class="col-sm-5">Expiration Date:</dt>
+                            <dd class="col-sm-7">
+                                @if (Model.Domain.ExpirationDate.HasValue)
+                                {
+                                    @Model.Domain.ExpirationDate.Value.ToShortDateString()
+                                    
+                                    var daysToExpiration = (Model.Domain.ExpirationDate.Value - DateTime.Now).Days;
+                                    
+                                    if (daysToExpiration < 0)
+                                    {
+                                        <span class="badge bg-danger ms-2">Expired</span>
+                                    }
+                                    else if (daysToExpiration < 30)
+                                    {
+                                        <span class="badge bg-danger ms-2">@daysToExpiration days</span>
+                                    }
+                                    else if (daysToExpiration < 60)
+                                    {
+                                        <span class="badge bg-warning ms-2">@daysToExpiration days</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span>N/A</span>
+                                }
+                            </dd>
+                            
+                            <dt class="col-sm-5">Renewal Period:</dt>
+                            <dd class="col-sm-7">
+                                @if (Model.Domain.RenewPeriod.HasValue)
+                                {
+                                    <span>@Model.Domain.RenewPeriod year@(Model.Domain.RenewPeriod > 1 ? "s" : "")</span>
+                                }
+                                else
+                                {
+                                    <span>N/A</span>
+                                }
+                            </dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-6">Registry Lock:</dt>
+                            <dd class="col-sm-6">
+                                @if (Model.Domain.HasRegistryLock)
+                                {
+                                    <span class="badge bg-success">Enabled</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Disabled</span>
+                                }
+                            </dd>
+                            
+                            <dt class="col-sm-6">Local Presence:</dt>
+                            <dd class="col-sm-6">
+                                @if (Model.Domain.HasLocalPresence)
+                                {
+                                    <span class="badge bg-success">Enabled</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Disabled</span>
+                                }
+                            </dd>
+                            
+                            <dt class="col-sm-6">WHOIS Privacy:</dt>
+                            <dd class="col-sm-6">
+                                @if (Model.Domain.HasPrivacy)
+                                {
+                                    <span class="badge bg-success">Enabled</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Disabled</span>
+                                }
+                            </dd>
+                            
+                            <dt class="col-sm-6">Proxy Registration:</dt>
+                            <dd class="col-sm-6">
+                                @if (Model.Domain.HasProxy)
+                                {
+                                    <span class="badge bg-success">Enabled</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Disabled</span>
+                                }
+                            </dd>
+                            
+                            <dt class="col-sm-6">Created:</dt>
+                            <dd class="col-sm-6">@Model.Domain.DateCreated.ToShortDateString()</dd>
+                            
+                            <dt class="col-sm-6">Last Modified:</dt>
+                            <dd class="col-sm-6">@Model.Domain.DateModified.ToShortDateString()</dd>
+                        </dl>
+                    </div>
+                </div>
+                
+                @if (!string.IsNullOrEmpty(Model.Domain.Comment))
+                {
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">Comments</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>@Model.Domain.Comment</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Domain Status</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.Domain.ExpirationDate.HasValue)
+                {
+                    var daysToExpiration = (Model.Domain.ExpirationDate.Value - DateTime.Now).Days;
+                    var percentage = Math.Min(100, Math.Max(0, (daysToExpiration / 365.0) * 100));
+                    
+                    <h6>Expiration Status</h6>
+                    <div class="progress mb-3">
+                        <div class="progress-bar @(daysToExpiration < 30 ? "bg-danger" : daysToExpiration < 60 ? "bg-warning" : "bg-success")" 
+                             role="progressbar" 
+                             style="width: @percentage%;" 
+                             aria-valuenow="@percentage" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            @daysToExpiration days
+                        </div>
+                    </div>
+                    
+                    if (daysToExpiration < 0)
+                    {
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle-fill"></i> 
+                            This domain has expired and needs immediate attention.
+                        </div>
+                    }
+                    else if (daysToExpiration < 30)
+                    {
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle-fill"></i> 
+                            This domain will expire in less than 30 days. Consider renewing soon.
+                        </div>
+                    }
+                    else if (daysToExpiration < 60)
+                    {
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> 
+                            This domain will expire in less than 60 days.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i> 
+                            This domain is in good standing.
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="alert alert-secondary">
+                        <i class="bi bi-info-circle"></i> 
+                        No expiration date has been set for this domain.
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Security Features</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Registry Lock
+                        @if (Model.Domain.HasRegistryLock)
+                        {
+                            <i class="bi bi-lock-fill text-success fs-4"></i>
+                        }
+                        else
+                        {
+                            <i class="bi bi-unlock text-secondary fs-4"></i>
+                        }
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        WHOIS Privacy
+                        @if (Model.Domain.HasPrivacy)
+                        {
+                            <i class="bi bi-shield-check text-success fs-4"></i>
+                        }
+                        else
+                        {
+                            <i class="bi bi-shield-x text-secondary fs-4"></i>
+                        }
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Proxy Registration
+                        @if (Model.Domain.HasProxy)
+                        {
+                            <i class="bi bi-person-check text-success fs-4"></i>
+                        }
+                        else
+                        {
+                            <i class="bi bi-person-x text-secondary fs-4"></i>
+                        }
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Local Presence
+                        @if (Model.Domain.HasLocalPresence)
+                        {
+                            <i class="bi bi-geo-alt-fill text-success fs-4"></i>
+                        }
+                        else
+                        {
+                            <i class="bi bi-geo-alt text-secondary fs-4"></i>
+                        }
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

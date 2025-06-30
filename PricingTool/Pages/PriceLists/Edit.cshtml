@@ -1,0 +1,81 @@
+@page "{id:guid}"
+@model PricingTool.Pages.PriceLists.EditModel
+
+@{
+    ViewData["Title"] = "Edit Price List";
+}
+
+<h1>Edit Price List</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="PriceList.Id" />
+            <input type="hidden" asp-for="PriceList.DateCreated" />
+            <div class="mb-3">
+                <label asp-for="PriceList.Name" class="form-label"></label>
+                <input asp-for="PriceList.Name" class="form-control" />
+                <span asp-validation-for="PriceList.Name" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Save
+                </button>
+                <a asp-page="./Index" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to List
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h3>Price List Entries</h3>
+        <a asp-page="./EditEntries" asp-route-priceListId="@Model.PriceList.Id" class="btn btn-primary mb-3">
+            <i class="bi bi-pencil"></i> Manage Entries
+        </a>
+
+        @if (Model.PriceListEntries.Count == 0)
+        {
+            <div class="alert alert-info">
+                No entries found in this price list. Use the Manage Entries button to add products to this price list.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>TLD</th>
+                            <th>Period</th>
+                            <th>Category</th>
+                            <th>Base Price</th>
+                            <th>Out Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var entry in Model.PriceListEntries)
+                        {
+                            <tr>
+                                <td>@entry.Product?.ProductName</td>
+                                <td>@entry.Product?.Tld</td>
+                                <td>@(entry.Product?.Period != null ? $"{entry.Product.Period} year(s)" : "N/A")</td>
+                                <td>@entry.Product?.Category</td>
+                                <td>@(entry.Product?.BasePrice.ToString("C"))</td>
+                                <td>@(entry.OutPrice?.ToString("C") ?? "Not set")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

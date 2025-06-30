@@ -1,0 +1,94 @@
+@page "{id:guid}"
+@model PricingTool.Pages.PriceLists.DetailsModel
+
+@{
+    ViewData["Title"] = "Price List Details";
+}
+
+<h1>Price List Details</h1>
+
+<div>
+    <dl class="row">
+        <dt class="col-sm-2">Name</dt>
+        <dd class="col-sm-10">@Model.PriceList.Name</dd>
+        
+        <dt class="col-sm-2">Date Created</dt>
+        <dd class="col-sm-10">@Model.PriceList.DateCreated.ToLocalTime().ToString("g")</dd>
+        
+        <dt class="col-sm-2">Last Modified</dt>
+        <dd class="col-sm-10">@Model.PriceList.DateModified.ToLocalTime().ToString("g")</dd>
+    </dl>
+</div>
+
+<div class="mb-3">
+    <a asp-page="./Edit" asp-route-id="@Model.PriceList.Id" class="btn btn-primary">
+        <i class="bi bi-pencil"></i> Edit
+    </a>
+    <a asp-page="./Index" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to List
+    </a>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h3>Price List Entries (@Model.PriceListEntries.Count)</h3>
+        
+        @if (Model.PriceListEntries.Count == 0)
+        {
+            <div class="alert alert-info">
+                No entries found in this price list. <a asp-page="./Edit" asp-route-id="@Model.PriceList.Id">Edit this price list</a> to add products.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>TLD</th>
+                            <th>Period</th>
+                            <th>Category</th>
+                            <th>Base Price</th>
+                            <th>Out Price</th>
+                            <th>Markup</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var entry in Model.PriceListEntries)
+                        {
+                            var basePrice = entry.Product?.BasePrice ?? 0;
+                            var outPrice = entry.OutPrice ?? 0;
+                            var markup = basePrice > 0 ? (outPrice / basePrice - 1) * 100 : 0;
+                            
+                            <tr>
+                                <td>@entry.Product?.ProductName</td>
+                                <td>@entry.Product?.Tld</td>
+                                <td>@(entry.Product?.Period != null ? $"{entry.Product.Period} year(s)" : "N/A")</td>
+                                <td>@entry.Product?.Category</td>
+                                <td>@(entry.Product?.BasePrice.ToString("C"))</td>
+                                <td>@(entry.OutPrice?.ToString("C") ?? "Not set")</td>
+                                <td>@(entry.OutPrice.HasValue ? $"{markup:F2}%" : "N/A")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            
+            @if (Model.Clients.Any())
+            {
+                <div class="mt-4">
+                    <h4>Clients Using This Price List</h4>
+                    <div class="list-group">
+                        @foreach (var client in Model.Clients)
+                        {
+                            <a href="/Clients/Details/@client.Id" class="list-group-item list-group-item-action">
+                                @client.Title
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

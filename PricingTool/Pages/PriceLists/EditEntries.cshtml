@@ -1,0 +1,159 @@
+@page "{priceListId:guid}"
+@model PricingTool.Pages.PriceLists.EditEntriesModel
+
+@{
+    ViewData["Title"] = "Manage Price List Entries";
+}
+
+<h1>Manage Price List Entries</h1>
+<h4>@Model.PriceList.Name</h4>
+
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <a asp-page="./Edit" asp-route-id="@Model.PriceList.Id" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Price List
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Add Products</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" asp-page-handler="AddProducts">
+                    <input type="hidden" name="PriceListId" value="@Model.PriceList.Id" />
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Select Category</label>
+                        <select id="categoryFilter" class="form-select" onchange="filterProducts()">
+                            <option value="">All Categories</option>
+                            @foreach (var category in Model.Categories)
+                            {
+                                <option value="@category">@category</option>
+                            }
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Select Products</label>
+                        <div class="input-group mb-3">
+                            <input type="text" id="productSearch" class="form-control" placeholder="Search products..." onkeyup="filterProducts()">
+                            <button class="btn btn-outline-secondary" type="button" onclick="clearProductSearch()">Clear</button>
+                        </div>
+                        <div class="available-products" style="max-height: 300px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.25rem; padding: 10px;">
+                            @foreach (var product in Model.AvailableProducts)
+                            {
+                                <div class="form-check product-item" data-category="@product.Category" data-name="@product.ProductName.ToLower()" data-tld="@product.Tld.ToLower()">
+                                    <input class="form-check-input" type="checkbox" name="SelectedProductIds" value="@product.Id" id="product_@product.Id">
+                                    <label class="form-check-label" for="product_@product.Id">
+                                        @product.ProductName (@product.Tld) - @(product.Period != null ? $"{product.Period} year(s)" : "N/A") - @product.BasePrice.ToString("C")
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Add Selected Products
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Current Entries</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.PriceListEntries.Count == 0)
+                {
+                    <div class="alert alert-info">
+                        No entries found in this price list. Use the form on the left to add products.
+                    </div>
+                }
+                else
+                {
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm table-striped">
+                            <thead class="sticky-top bg-light">
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Base Price</th>
+                                    <th>Out Price</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var entry in Model.PriceListEntries)
+                                {
+                                    <tr>
+                                        <td>@entry.Product?.ProductName (@entry.Product?.Tld)</td>
+                                        <td>@entry.Product?.BasePrice.ToString("C")</td>
+                                        <td>
+                                            <form method="post" asp-page-handler="UpdatePrice" class="row g-2">
+                                                <input type="hidden" name="EntryId" value="@entry.Id" />
+                                                <input type="hidden" name="PriceListId" value="@Model.PriceList.Id" />
+                                                <div class="col">
+                                                    <div class="input-group input-group-sm">
+                                                        <input type="number" name="OutPrice" class="form-control form-control-sm" 
+                                                               value="@(entry.OutPrice?.ToString("F2") ?? "")" 
+                                                               step="0.01" min="0" placeholder="Set price">
+                                                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                            <i class="bi bi-check"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </td>
+                                        <td>
+                                            <form method="post" asp-page-handler="RemoveEntry" onsubmit="return confirm('Are you sure you want to remove this product?');">
+                                                <input type="hidden" name="EntryId" value="@entry.Id" />
+                                                <input type="hidden" name="PriceListId" value="@Model.PriceList.Id" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function filterProducts() {
+            const categoryFilter = document.getElementById('categoryFilter').value.toLowerCase();
+            const searchText = document.getElementById('productSearch').value.toLowerCase();
+            const products = document.querySelectorAll('.product-item');
+            
+            products.forEach(product => {
+                const category = product.getAttribute('data-category').toLowerCase();
+                const name = product.getAttribute('data-name');
+                const tld = product.getAttribute('data-tld');
+                
+                const categoryMatch = !categoryFilter || category === categoryFilter;
+                const searchMatch = !searchText || name.includes(searchText) || tld.includes(searchText);
+                
+                product.style.display = categoryMatch && searchMatch ? 'block' : 'none';
+            });
+        }
+        
+        function clearProductSearch() {
+            document.getElementById('productSearch').value = '';
+            filterProducts();
+        }
+    </script>
+}

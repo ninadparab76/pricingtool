@@ -20,3 +20,30 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+/* View toggle button group styling */
+.view-toggle-btn {
+  transition: all 0.3s ease;
+}
+
+.view-toggle-btn:hover {
+  transform: translateY(-2px);
+}
+
+.total-renewal-badge {
+  font-size: 0.9rem;
+  padding: 0.35rem 0.65rem;
+}
+
+.accordion-button:not(.collapsed) {
+  background-color: rgba(13, 110, 253, 0.1);
+}
+
+/* Highlight expiring domains */
+.expiring-soon {
+  background-color: rgba(255, 0, 0, 0.05);
+}
+
+.expiring-warning {
+  background-color: rgba(255, 193, 7, 0.05);
+}
